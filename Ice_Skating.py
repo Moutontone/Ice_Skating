@@ -1,5 +1,6 @@
 # /bin/python
 import random
+import numpy as np
 
 def main():
     print("Move the Player (P) to the goal (G)")
@@ -9,8 +10,8 @@ def main():
     print_map(pos)
     for t in range(T):
 
-        #action = random.choice(Actions)
-        action = policy(pos, dir, t)
+        action = random.choice(Actions)
+        #action = policy(pos, dir, t)
         print(f"action : {action}")
 
         pos, dir = try_movement(pos, dir, action)
@@ -50,11 +51,14 @@ T = 10
 
 # W = [[[-1 for _ in Actions] for _ in range(len(map[0]))] for _ in range(len(map))]
 dic = {
-        (goal, up): (up, 1),
+        (goal, up): (1, up),
         (goal, right): (up, 1),
         (goal, down): (up, 1),
         (goal, left): (up, 1),
         }
+
+memory = np.full((T,7,7,4), -1)
+print(f"{memory[0][0][0][0]}")
 
 def policy(pos, dir, t):
     _, a = W(pos, dir, t)
