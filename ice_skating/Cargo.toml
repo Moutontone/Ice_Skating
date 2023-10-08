@@ -1,5 +1,5 @@
 [package]
-name = "Ice_skating"
+name = "ice_skating"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,3 +9,4 @@ edition = "2021"
 geo-types = "0.7.11"
 rand = "0.8.5"
 rusttype = "0.9.3"
+strum = "0.25.0"
