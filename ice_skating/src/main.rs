@@ -8,14 +8,16 @@ const P_PRECISION: usize = 10000;
 // probability to turn
 const P: f32 = 0.8;
 // number of turn
-const T: usize = 5;
+const T: usize = 20;
 
+#[derive(Debug)]
 enum Directions {
     Up,
     Down,
     Left,
     Right,
 }
+
 
 impl Directions {
     fn to_ind(&self) -> usize {
@@ -27,7 +29,6 @@ impl Directions {
         }
     }
 
-    fn into_iter(&self) {}
 }
 
 struct Mem {
@@ -50,7 +51,8 @@ impl Mem {
     }
 
     fn set_action(&mut self, t: usize, s: &State, arg: Directions) -> () {
-        self.mem_best_action[t][s.position.x as usize][s.position.y as usize][s.direction.to_ind()] = arg
+        self.mem_best_action[t][s.position.x as usize][s.position.y as usize]
+            [s.direction.to_ind()] = arg
     }
 
     fn get_reward(&self, t: usize, s: &State) -> f32 {
@@ -61,6 +63,19 @@ impl Mem {
 struct State {
     position: rusttype::Point<i32>,
     direction: Directions,
+}
+
+impl Copy for State {
+
+}
+
+impl Clone for State {
+    fn clone(&self) -> Self {
+        State {
+            position: self.position,
+            direction: self.direction,
+        }
+    }
 }
 
 impl State {
@@ -127,20 +142,27 @@ fn main() {
     ];
     let goal = point(1, 5);
     let init: State = State {
-        position: point(3, 5),
+        position: point(5, 1),
         direction: Directions::Up,
     };
 
-    let mem: Mem = Mem {
+    let mut m = Mem {
         mem_reward: [[[[-1., -1., -1., -1.]; N]; N]; T + 1],
         mem_best_action: [[[[Directions::Up; 4]; N]; N]; T + 1],
     };
+    let mem = &mut m;
 
     let mut s = init;
     draw_map(map, goal, &s);
     for t in 1..T {
-        let _a = policy_rdm(map, goal, &s);
-        let a = policy(&mem, map, goal, &s, t);
+        println!("----- turn {:}",t);
+        println!("Current Direction {:?}",s.direction);
+        //let _a = policy_rdm(map, goal, &s);
+        let a = policy(mem, map, goal, &s, t);
+
+        println!("Chosen action {:?}",a);
+        println!();
+
         s = make_action(s, a);
         draw_map(map, goal, &s);
 
@@ -173,14 +195,20 @@ fn reward(goal: Point<usize>, s: &State) -> f32 {
         0.
     }
 }
-fn policy(mem: &Mem, map: [[u32; N]; N], goal: Point<usize>, s: &State, t: usize) -> Directions {
+fn policy(
+    mem: &mut Mem,
+    map: [[u32; N]; N],
+    goal: Point<usize>,
+    s: &State,
+    t: usize,
+) -> Directions {
     if mem.is_uncomputed(t, s) {
         w(mem, map, goal, s, t);
     }
     mem.action_at(t, s)
 }
 
-fn w(mem: &Mem, map: [[u32; N]; N], goal: Point<usize>, s: &State, t: usize) -> f32 {
+fn w(mem: &mut Mem, map: [[u32; N]; N], goal: Point<usize>, s: &State, t: usize) -> f32 {
     if mem.is_uncomputed(t, s) {
         if s.position.x == goal.x as i32 && s.position.y == goal.y as i32 {
             // game won
@@ -204,7 +232,7 @@ fn w(mem: &Mem, map: [[u32; N]; N], goal: Point<usize>, s: &State, t: usize) -> 
             ]
             .iter()
             .fold((-1f32, Directions::Up), |(maxR, bestD), &a| {
-                let w_turn = w(mem, map, goal, &s.change_dir(a).avance(), t + 1);
+                let w_turn = w(mem, map, goal, &(s.change_dir(a).avance()), t + 1);
                 let w_no_turn = w(mem, map, goal, &s.avance(), t + 1);
                 let res = reward(goal, s) + P * w_turn + (1. - P) * w_no_turn;
                 if res > maxR {
